@@ -10,7 +10,7 @@ RAILWAY_URL = "https://worker-production-abb5.up.railway.app"
 WEBHOOK_URL = f"{RAILWAY_URL}{WEBHOOK_PATH}"
 
 WEBAPP_HOST = "0.0.0.0"
-WEBAPP_PORT = int(os.environ.get("PORT", 8000))  # Railway сам назначает порт
+WEBAPP_PORT = int(os.environ.get("PORT", 8080))  # Railway сам назначает порт
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
