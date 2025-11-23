@@ -1,50 +1,44 @@
-import logging
 from aiogram import Bot, Dispatcher, types
-from aiogram.utils.executor import start_webhook
+from aiogram.types import InputFile
+from aiogram.utils import executor
+import logging
 import os
 
-logging.basicConfig(level=logging.INFO)
-
-BOT_TOKEN = "8452605972:AAH32IFCrVYG-lvmNhm3zsjQ-I_Hxqzkwpg"
+API_TOKEN = '8452605972:AAH32IFCrVYG-lvmNhm3zsjQ-I_Hxqzkwpg'
 SOURCE_CHANNEL = -1002913212827
 TARGET_CHANNEL = -1003248459795
 
-WEBHOOK_HOST = "https://worker-production-abb5.up.railway.app"
-WEBHOOK_PATH = "/"
-WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
+logging.basicConfig(level=logging.INFO)
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher()
 
-WEBAPP_HOST = "0.0.0.0"  # Railway использует этот хост
-WEBAPP_PORT = int(os.environ.get("PORT", 8000))
-
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot)
-
-# Обработчик новых постов в канале
-@dp.channel_post_handler(lambda message: message.chat.id == SOURCE_CHANNEL)
-async def repost_channel_post(message: types.Message):
-    # Репостим пост в целевой канал
-    await bot.copy_message(
-        chat_id=TARGET_CHANNEL,
-        from_chat_id=SOURCE_CHANNEL,
-        message_id=message.message_id
-    )
-
-async def on_startup(dispatcher):
-    # Устанавливаем webhook
-    await bot.set_webhook(WEBHOOK_URL)
-    logging.info(f"Webhook установлен: {WEBHOOK_URL}")
-
-async def on_shutdown(dispatcher):
-    # Убираем webhook при остановке
-    logging.info("Удаляем webhook...")
-    await bot.delete_webhook()
+@dp.channel_post_handler()
+async def repost_message(message: types.Message):
+    try:
+        # Текст
+        if message.text:
+            await bot.send_message(TARGET_CHANNEL, message.text)
+        
+        # Фото
+        elif message.photo:
+            photo = message.photo[-1]  # Выбираем максимальное качество
+            caption = message.caption or ""
+            await bot.send_photo(TARGET_CHANNEL, photo.file_id, caption=caption)
+        
+        # Видео
+        elif message.video:
+            caption = message.caption or ""
+            await bot.send_video(TARGET_CHANNEL, message.video.file_id, caption=caption)
+        
+        # Документы (pdf, docx и т.д.)
+        elif message.document:
+            caption = message.caption or ""
+            await bot.send_document(TARGET_CHANNEL, message.document.file_id, caption=caption)
+        
+        else:
+            logging.info("Неизвестный тип сообщения, пропускаем")
+    except Exception as e:
+        logging.error(f"Ошибка при репосте: {e}")
 
 if __name__ == "__main__":
-    start_webhook(
-        dispatcher=dp,
-        webhook_path=WEBHOOK_PATH,
-        on_startup=on_startup,
-        on_shutdown=on_shutdown,
-        host=WEBAPP_HOST,
-        port=WEBAPP_PORT,
-    )
+    executor.start_polling(dp, skip_updates=True)
