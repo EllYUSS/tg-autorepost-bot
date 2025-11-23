@@ -1,28 +1,39 @@
-import logging
-from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor
 import os
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils.executor import start_webhook
 
-logging.basicConfig(level=logging.INFO)
+API_TOKEN = os.getenv("BOT_TOKEN")  # токен бота из переменных окружения
 
-TOKEN = "8452605972:AAH32IFCrVYG-lvmNhm3zsjQ-I_Hxqzkwpg"
-SOURCE_CHAT = -1002913212827
-TARGET_CHAT = -1003248459795
+WEBHOOK_HOST = f"https://{os.getenv('RAILWAY_STATIC_URL')}"
+WEBHOOK_PATH = f"/webhook/{API_TOKEN}"
+WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
-bot = Bot(token=TOKEN)
+WEBAPP_HOST = "0.0.0.0"
+WEBAPP_PORT = int(os.getenv("PORT", 8000))
+
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-@dp.channel_post_handler(lambda message: message.chat.id == SOURCE_CHAT)
-async def autorepost(message: types.Message):
-    try:
-        await bot.copy_message(
-            chat_id=TARGET_CHAT,
-            from_chat_id=SOURCE_CHAT,
-            message_id=message.message_id
-        )
-        logging.info(f"Copied message {message.message_id}")
-    except Exception as e:
-        logging.exception("Failed to copy message: %s", e)
+@dp.message_handler()
+async def echo(message: types.Message):
+    await message.answer(f"Ты написал: {message.text}")
+
+async def on_startup(dp):
+    await bot.delete_webhook()
+    await bot.set_webhook(WEBHOOK_URL)
+    print(f"Webhook установлен: {WEBHOOK_URL}")
+
+async def on_shutdown(dp):
+    await bot.delete_webhook()
+    print("Webhook удален")
 
 if __name__ == "__main__":
-    executor.start_polling(dp, skip_updates=True)
+    start_webhook(
+        dispatcher=dp,
+        webhook_path=WEBHOOK_PATH,
+        on_startup=on_startup,
+        on_shutdown=on_shutdown,
+        skip_updates=True,
+        host=WEBAPP_HOST,
+        port=WEBAPP_PORT,
+    )
