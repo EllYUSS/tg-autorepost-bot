@@ -3,7 +3,7 @@ from aiogram.utils import executor
 import logging
 import asyncio
 
-API_TOKEN = '8452605972:AAH32IFCrVYG-lvmNhm3zsjQ-I_Hxqzkwpg'
+API_TOKEN = '8335085716:AAEdtHlmC09U9xcWZMziFNQnzp-EUn67d5A'
 SOURCE_CHANNEL_ID = '-1002913212827'  # канал, откуда берём посты
 TARGET_CHANNEL_ID = '-1003248459795'  # канал, куда репостим
 
