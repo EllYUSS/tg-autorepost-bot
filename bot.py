@@ -1,29 +1,27 @@
+import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
-import logging
-import asyncio
 
-API_TOKEN = '8335085716:AAEdtHlmC09U9xcWZMziFNQnzp-EUn67d5A'
-SOURCE_CHANNEL_ID = '-1002913212827'  # канал, откуда берём посты
-TARGET_CHANNEL_ID = '-1003248459795'  # канал, куда репостим
+API_TOKEN = "8335085716:AAEdtHlmC09U9xcWZMziFNQnzp-EUn67d5A"
+SOURCE_CHANNEL_ID = -1002913212827
+TARGET_CHANNEL_ID = -1003248459795
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-@dp.channel_post_handler()  # ловим новые сообщения в канале, где бот админ
+
+@dp.channel_post_handler()
 async def repost_message(message: types.Message):
     try:
-        await bot.forward_message(
+        # copy_message копирует ВСЕ типы постов, включая фото, видео, альбом, файлы, гифки
+        await bot.copy_message(
             chat_id=TARGET_CHANNEL_ID,
-            from_chat_id=message.chat.id,
+            from_chat_id=SOURCE_CHANNEL_ID,
             message_id=message.message_id
         )
-        logging.info(f"Репост успешен: {message.message_id}")
-    except Exception as e:
-        logging.error(f"Ошибка при репосте: {e}")
+        logging.info(f"Скопировано: {message.message_id}")
 
-if __name__ == '__main__':
-    # запуск бота
-    executor.start_polling(dp, skip_updates=True)
+    except Exception as e:
+        logging.error(f"Ошибка при копировании: {e}")
